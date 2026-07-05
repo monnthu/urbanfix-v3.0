@@ -1,9 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { DEFAULT_CENTER, DEFAULT_ZOOM } from '@/lib/constants';
 import type { Report } from '@/lib/types';
 
-// Leaflet touches `window`, so load the map only on the client.
 const ReportsMap = dynamic(() => import('./ReportsMap'), {
   ssr: false,
   loading: () => (
@@ -19,5 +20,30 @@ export function MapClient(props: {
   zoom?: number;
   height?: string;
 }) {
-  return <ReportsMap {...props} />;
+  const [userCenter, setUserCenter] = useState<[number, number] | null>(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserCenter([pos.coords.latitude, pos.coords.longitude]);
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
+  }, []);
+
+  const center =
+    userCenter ??
+    props.center ??
+    (props.reports.length > 0
+      ? ([props.reports[0].latitude, props.reports[0].longitude] as [
+          number,
+          number,
+        ])
+      : DEFAULT_CENTER);
+
+  const zoom = userCenter ? 14 : (props.zoom ?? DEFAULT_ZOOM);
+
+  return <ReportsMap {...props} center={center} zoom={zoom} />;
 }

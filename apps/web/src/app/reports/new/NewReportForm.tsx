@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -21,10 +21,12 @@ const LocationPickerMap = dynamic(
 export function NewReportForm({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const supabase = createClient();
+  const categoryOptions =
+    categories.length > 0 ? categories : [{ id: 'other', label: 'Other', icon: 'pin' }];
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState(categories[0]?.id ?? 'other');
+  const [category, setCategory] = useState(categoryOptions[0].id);
   const [address, setAddress] = useState('');
   const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -44,11 +46,26 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
       setError('Geolocation is not available in this browser.');
       return;
     }
+    setError(null);
+    setStatus('Getting your location…');
     navigator.geolocation.getCurrentPosition(
-      (pos) => setLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setError('Could not get your location. Drop a pin instead.'),
+      (pos) => {
+        setLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setStatus(null);
+      },
+      () => {
+        setStatus(null);
+        setError('Could not get your location. Drop a pin instead.');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
     );
   }
+
+  // Center the map on the user's location as soon as the form loads.
+  useEffect(() => {
+    useMyLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,7 +88,10 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
         const path = `${user?.id ?? 'anon'}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('report-images')
-          .upload(path, file, { upsert: false });
+          .upload(path, file, {
+            upsert: false,
+            contentType: file.type || 'image/jpeg',
+          });
         if (upErr) throw new Error(`Image upload failed: ${upErr.message}`);
         const { data } = supabase.storage
           .from('report-images')
@@ -82,6 +102,7 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
       setStatus('Filing report and routing…');
       const res = await fetch('/api/reports', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
@@ -93,8 +114,16 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
           image_url: imageUrl,
         }),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Failed to create report');
+      const text = await res.text();
+      const json = text ? JSON.parse(text) : null;
+      if (!res.ok) {
+        throw new Error(
+          json?.error ?? `Failed to create report (HTTP ${res.status})`,
+        );
+      }
+      if (!json?.id) {
+        throw new Error('Report was created but no report id was returned.');
+      }
 
       router.push(`/reports/${json.id}`);
       router.refresh();
@@ -131,7 +160,7 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >
-          {categories.map((c) => (
+          {categoryOptions.map((c) => (
             <option key={c.id} value={c.id}>
               {c.label}
             </option>
@@ -182,7 +211,9 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
         <p className="mt-1 text-xs text-slate-400">
           {loc
             ? `Selected: ${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`
-            : 'Click the map to drop a pin.'}
+            : status === 'Getting your location…'
+              ? status
+              : 'Click the map to drop a pin.'}
         </p>
       </div>
 

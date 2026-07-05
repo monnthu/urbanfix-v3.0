@@ -1,10 +1,29 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { categoryColor, DEFAULT_CENTER, DEFAULT_ZOOM } from '@/lib/constants';
 import type { Report } from '@/lib/types';
+
+function RecenterMap({
+  center,
+  zoom,
+}: {
+  center: [number, number];
+  zoom: number;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.whenReady(() => {
+      map.flyTo(center, zoom, { duration: 0.8 });
+    });
+  }, [map, center[0], center[1], zoom]);
+
+  return null;
+}
 
 export default function ReportsMap({
   reports,
@@ -27,6 +46,7 @@ export default function ReportsMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <RecenterMap center={center} zoom={zoom} />
         {reports.map((r) => (
           <CircleMarker
             key={r.id}

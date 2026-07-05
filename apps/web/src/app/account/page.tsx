@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getSessionProfile } from '@/lib/auth';
-import { MfaEnroll } from '@/components/MfaEnroll';
 
 export default async function AccountPage() {
   const session = await getSessionProfile();
@@ -17,21 +16,7 @@ export default async function AccountPage() {
         <Row label="Email" value={email ?? '—'} />
         <Row label="Name" value={profile?.display_name ?? '—'} />
         <Row label="Role" value={profile?.role ?? 'civilian'} />
-        <Row
-          label="Verified"
-          value={profile?.civilian_verified ? 'Yes (TOTP enabled)' : 'No'}
-        />
-      </div>
-
-      <div className="card p-6">
-        <h2 className="text-lg font-semibold">Two-factor authentication</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Required to verify civilian accounts. Uses a free TOTP authenticator
-          app — no SMS.
-        </p>
-        <div className="mt-4">
-          <MfaEnroll />
-        </div>
+        <Row label="Verified" value="Yes (Google sign-in)" />
       </div>
 
       {profile?.role === 'civilian' && (

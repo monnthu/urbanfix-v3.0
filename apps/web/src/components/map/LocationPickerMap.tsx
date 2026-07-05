@@ -1,6 +1,7 @@
 'use client';
 
-import { MapContainer, TileLayer, CircleMarker, useMapEvents } from 'react-leaflet';
+import { useEffect } from 'react';
+import { MapContainer, TileLayer, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from '@/lib/constants';
 
@@ -14,6 +15,25 @@ function ClickHandler({
       onPick(e.latlng.lat, e.latlng.lng);
     },
   });
+  return null;
+}
+
+function RecenterMap({
+  lat,
+  lng,
+}: {
+  lat: number | null;
+  lng: number | null;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (lat == null || lng == null) return;
+    map.whenReady(() => {
+      map.flyTo([lat, lng], Math.max(map.getZoom(), 15), { duration: 0.8 });
+    });
+  }, [map, lat, lng]);
+
   return null;
 }
 
@@ -36,6 +56,7 @@ export default function LocationPickerMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <ClickHandler onPick={onPick} />
+        <RecenterMap lat={value?.lat ?? null} lng={value?.lng ?? null} />
         {value && (
           <CircleMarker
             center={[value.lat, value.lng]}

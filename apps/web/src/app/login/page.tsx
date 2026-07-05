@@ -33,8 +33,7 @@ export default function LoginPage() {
       <div className="card p-8">
         <h1 className="text-2xl font-bold">Sign in to Urbanfix</h1>
         <p className="mt-2 text-sm text-slate-500">
-          Use your Google/Gmail account. After signing in you will be prompted
-          to set up an authenticator app (TOTP) for verification.
+          Use your Google/Gmail account to verify your identity and continue.
         </p>
 
         <button
