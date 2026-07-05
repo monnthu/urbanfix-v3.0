@@ -7,7 +7,29 @@ so it runs on Android and iOS from a single codebase.
 > This folder contains the Flutter source (`lib/`, `pubspec.yaml`). The platform
 > runner folders (`android/`, `ios/`, etc.) are generated locally — see step 2.
 
-## Prerequisites
+## Download a pre-built APK (no local Android SDK)
+
+GitHub Actions builds the release APK in the cloud. You need these **repository secrets**
+(same values as Vercel):
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+Optional **repository variable**: `API_BASE_URL` (defaults to `https://urbanfix.vercel.app`).
+
+Then either:
+
+1. **Actions → Build Flutter APK → Run workflow** — when it finishes, open the run and
+   download the `urbanfix-mobile-apk` artifact.
+2. **Tag a release** — push a tag like `mobile-v1.0.0` to auto-attach the APK to a
+   GitHub Release:
+
+   ```bash
+   git tag mobile-v1.0.0
+   git push origin mobile-v1.0.0
+   ```
+
+## Prerequisites (local build only)
 
 - Flutter SDK 3.19+ (Dart 3.3+). Run `flutter doctor` and resolve any issues.
 - Android Studio / Android SDK with an emulator (API 24+) or a physical device.
