@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+apps/web/build/
+apps/web/next-env.d.ts
+
+# Production
+dist/
+build/
+
+# Environment
+.env
+.env*.local
+.env.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+Thumbs.db
+
+# Flutter
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/build/
+apps/mobile/.pub-cache/
+apps/mobile/.pub/
+apps/mobile/pubspec.lock
+# Generated platform runners (created via `flutter create .`)
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/linux/
+apps/mobile/macos/
+apps/mobile/windows/
+apps/mobile/web/
+
+# Supabase
+supabase/.temp/
+supabase/.branches/
