@@ -264,5 +264,20 @@ on conflict (id) do nothing;
 
 create policy "report images public read" on storage.objects
   for select using (bucket_id = 'report-images');
-create policy "report images authenticated upload" on storage.objects
-  for insert with check (bucket_id = 'report-images' and auth.role() = 'authenticated');
+
+create policy "report images auth insert" on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'report-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "report images auth update" on storage.objects
+  for update to authenticated
+  using (
+    bucket_id = 'report-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "report images bucket read" on storage.buckets
+  for select using (id = 'report-images');

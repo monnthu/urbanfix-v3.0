@@ -83,8 +83,11 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
         const {
           data: { user },
         } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error('You must be signed in to upload an image.');
+        }
         const ext = file.name.split('.').pop() || 'jpg';
-        const path = `${user?.id ?? 'anon'}/${Date.now()}.${ext}`;
+        const path = `${user.id}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('report-images')
           .upload(path, file, {
