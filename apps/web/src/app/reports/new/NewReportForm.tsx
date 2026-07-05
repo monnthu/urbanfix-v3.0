@@ -109,7 +109,7 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
         body: JSON.stringify({
           title,
           description,
-          category,
+          category: file ? undefined : category,
           address_text: address,
           latitude: loc.lat,
           longitude: loc.lng,
@@ -156,32 +156,11 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
       </div>
 
       <div>
-        <label className="label">Category</label>
-        <select
-          className="input"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
-          {categoryOptions.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="label">Description</label>
-        <textarea
-          className="input min-h-[96px]"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe the issue…"
-        />
-      </div>
-
-      <div>
         <label className="label">Photo</label>
+        <p className="mb-2 text-xs text-slate-500">
+          Add a photo and AI will detect the category and priority automatically
+          after you submit.
+        </p>
         <input
           type="file"
           accept="image/*"
@@ -196,6 +175,39 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
             className="mt-3 h-40 rounded-lg object-cover"
           />
         )}
+      </div>
+
+      {!file && (
+        <div>
+          <label className="label">Category</label>
+          <select
+            className="input"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            {categoryOptions.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          {categories.length === 0 && (
+            <p className="mt-1 text-xs text-amber-600">
+              No categories in the database yet. Run supabase/seed.sql in Supabase,
+              or attach a photo and AI will categorize after submit.
+            </p>
+          )}
+        </div>
+      )}
+
+      <div>
+        <label className="label">Description</label>
+        <textarea
+          className="input min-h-[96px]"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Describe the issue…"
+        />
       </div>
 
       <div>

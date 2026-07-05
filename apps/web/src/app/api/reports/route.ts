@@ -4,16 +4,39 @@ import { resolveZone, resolveInstitution } from '@/lib/routing';
 import { analyzeReportImage } from '@/lib/gemini';
 import type { Category, Institution, Zone } from '@/lib/types';
 
+const DEFAULT_CATEGORY_IDS = [
+  'flooding',
+  'pothole',
+  'streetlight',
+  'garbage',
+  'graffiti',
+  'water',
+  'other',
+];
+
 async function runImageAnalysis(
   supabase: ReturnType<typeof createClient>,
   reportId: string,
   imageUrl: string,
 ) {
   try {
-    const { data: categories } = await supabase.from('categories').select('id');
-    const categoryIds = ((categories as Pick<Category, 'id'>[]) ?? []).map(
-      (c) => c.id,
-    );
+    const { data: report } = await supabase
+      .from('reports')
+      .select('latitude, longitude, zone_id')
+      .eq('id', reportId)
+      .single();
+
+    const [{ data: categories }, { data: zones }, { data: institutions }] =
+      await Promise.all([
+        supabase.from('categories').select('id'),
+        supabase.from('zones').select('*'),
+        supabase.from('institutions').select('*'),
+      ]);
+
+    const categoryIds =
+      ((categories as Pick<Category, 'id'>[]) ?? []).map((c) => c.id).length > 0
+        ? ((categories as Pick<Category, 'id'>[]) ?? []).map((c) => c.id)
+        : DEFAULT_CATEGORY_IDS;
 
     const imgRes = await fetch(imageUrl);
     if (!imgRes.ok) throw new Error('Could not fetch uploaded image');
@@ -26,15 +49,31 @@ async function runImageAnalysis(
       categoryIds,
     );
 
+    const zone =
+      report?.zone_id != null
+        ? ((zones as Zone[]) ?? []).find((z) => z.id === report.zone_id) ?? null
+        : report
+          ? resolveZone(report.latitude, report.longitude, (zones as Zone[]) ?? [])
+          : null;
+
+    const institutionId = resolveInstitution(
+      analysis.category,
+      zone?.id ?? report?.zone_id ?? null,
+      (institutions as Institution[]) ?? [],
+    );
+
     await supabase
       .from('reports')
       .update({
+        category: analysis.category,
         ai_category_suggestion: analysis.category,
         ai_priority_suggestion: analysis.priority,
         ai_confidence: analysis.confidence,
         ai_reason: analysis.reason,
         ai_status: 'completed',
         priority: analysis.priority,
+        assigned_institution_id: institutionId,
+        status: institutionId ? 'assigned' : 'unassigned',
       })
       .eq('id', reportId);
   } catch {
@@ -58,21 +97,27 @@ export async function POST(request: Request) {
   const {
     title,
     description = '',
-    category,
+    category: requestedCategory,
     address_text = null,
     latitude,
     longitude,
     image_url = null,
   } = body ?? {};
 
-  if (
-    !title ||
-    !category ||
-    typeof latitude !== 'number' ||
-    typeof longitude !== 'number'
-  ) {
+  if (!title || typeof latitude !== 'number' || typeof longitude !== 'number') {
     return NextResponse.json(
-      { error: 'title, category, latitude and longitude are required' },
+      { error: 'title, latitude and longitude are required' },
+      { status: 400 },
+    );
+  }
+
+  // With a photo, AI assigns the real category after submit. Without one, pick manually.
+  const category =
+    requestedCategory ?? (image_url ? 'other' : null);
+
+  if (!category) {
+    return NextResponse.json(
+      { error: 'Choose a category, or attach a photo for AI detection.' },
       { status: 400 },
     );
   }
