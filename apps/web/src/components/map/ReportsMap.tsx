@@ -15,12 +15,13 @@ function RecenterMap({
   zoom: number;
 }) {
   const map = useMap();
+  const [lat, lng] = center;
 
   useEffect(() => {
     map.whenReady(() => {
-      map.flyTo(center, zoom, { duration: 0.8 });
+      map.flyTo([lat, lng], zoom, { duration: 0.8 });
     });
-  }, [map, center[0], center[1], zoom]);
+  }, [map, lat, lng, zoom]);
 
   return null;
 }

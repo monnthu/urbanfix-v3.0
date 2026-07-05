@@ -41,7 +41,7 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
     setPreview(f ? URL.createObjectURL(f) : null);
   }
 
-  function useMyLocation() {
+  function requestLocation() {
     if (!navigator.geolocation) {
       setError('Geolocation is not available in this browser.');
       return;
@@ -63,8 +63,7 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
 
   // Center the map on the user's location as soon as the form loads.
   useEffect(() => {
-    useMyLocation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    requestLocation();
   }, []);
 
   async function submit(e: React.FormEvent) {
@@ -201,7 +200,7 @@ export function NewReportForm({ categories }: { categories: Category[] }) {
           <label className="label mb-0">Location</label>
           <button
             type="button"
-            onClick={useMyLocation}
+            onClick={requestLocation}
             className="btn-ghost text-xs"
           >
             Use my location
